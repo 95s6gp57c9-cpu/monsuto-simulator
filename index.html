@@ -47,7 +47,7 @@ function draw(){
  }
  ctx.lineWidth=4;ctx.strokeStyle='#00e5ff';ctx.shadowColor='#00e5ff';ctx.shadowBlur=7;ctx.stroke();ctx.restore();
  ctx.lineWidth=2;ctx.strokeStyle='rgba(255,213,74,.35)';ctx.strokeRect(L,T,R-L,B-T);
- ctx.beginPath();ctx.arc(origin.x,origin.y,11,0,Math.PI*2);ctx.fillStyle='#ffd54a';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke();
+ ctx.save();ctx.shadowColor='rgba(0,0,0,.75)';ctx.shadowBlur=5;ctx.beginPath();ctx.arc(origin.x,origin.y,25,0,Math.PI*2);ctx.lineWidth=4;ctx.strokeStyle='#ffd54a';ctx.stroke();ctx.restore();
 }
 function point(e){const r=canvas.getBoundingClientRect();return{x:clamp((e.clientX-r.left)*W/r.width,+$("left").value,W-+$("right").value),y:clamp((e.clientY-r.top)*H/r.height,+$("upper").value,H-+$("lower").value)}}
 function aim(p){if(Math.hypot(p.x-origin.x,p.y-origin.y)<5)return;angle=Math.round(Math.atan2(p.y-origin.y,p.x-origin.x)/STEP)*STEP;draw()}
