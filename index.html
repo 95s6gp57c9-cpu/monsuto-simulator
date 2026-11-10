@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#171923"><title>反射軌道</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;background:transparent;color:#fff;font-family:system-ui,-apple-system,sans-serif}main{width:min(100%,520px);margin:auto;padding:0;position:relative}canvas{display:block;width:100%;aspect-ratio:8/9;background:transparent;touch-action:none} .floating{position:absolute;top:7px;right:7px;z-index:2;display:flex;gap:5px;align-items:flex-start}button,.file,summary{border:1px solid #737d91;border-radius:8px;background:#242b39e8;color:#fff;padding:8px 10px;font-size:12px;cursor:pointer}.file input{display:none}details{position:relative}details[open]{background:#202633f2;border-radius:8px;padding:0 6px 8px;max-width:300px;max-height:75vh;overflow:auto}details summary{list-style:none}details summary::-webkit-details-marker{display:none}.settings{display:flex;flex-direction:column;gap:7px;padding:9px 3px}.settings label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}.settings input[type=range]{width:135px;min-width:80px;accent-color:#00e5ff}.settings output{min-width:34px;text-align:right}.settings small{font-size:11px;color:#cbd0da}.bouncerow{display:flex;align-items:center;gap:6px;width:100%}.bouncerow span{white-space:nowrap;font-size:13px}.bouncerow input[type=range]{flex:1;width:0;min-width:55px}.bouncerow button{flex:0 0 34px;min-width:0;padding:7px 2px;font-size:15px;white-space:nowrap}.bouncerow output{min-width:28px;text-align:center;font-variant-numeric:tabular-nums}.wallrow{display:grid;grid-template-columns:44px 46px 42px 46px;align-items:center;justify-content:space-between;gap:7px;width:100%}.wallrow span{white-space:nowrap;font-size:13px}.wallrow button{padding:7px 4px;min-width:0;font-size:14px;white-space:nowrap;line-height:1.3}.wallrow output{min-width:0;text-align:center;font-size:15px;font-variant-numeric:tabular-nums}.settings .file{align-self:flex-start} .settings button{align-self:flex-start}
+*{box-sizing:border-box}html,body{margin:0;background:transparent;color:#fff;font-family:system-ui,-apple-system,sans-serif}main{width:min(100%,520px);margin:auto;padding:0;position:relative}canvas{display:block;width:100%;aspect-ratio:8/9;background:transparent;touch-action:none}#below{aspect-ratio:800/558} .floating{position:absolute;top:7px;right:7px;z-index:2;display:flex;gap:5px;align-items:flex-start}button,.file,summary{border:1px solid #737d91;border-radius:8px;background:#242b39e8;color:#fff;padding:8px 10px;font-size:12px;cursor:pointer}.file input{display:none}details{position:relative}details[open]{background:#202633f2;border-radius:8px;padding:0 6px 8px;max-width:300px;max-height:75vh;overflow:auto}details summary{list-style:none}details summary::-webkit-details-marker{display:none}.settings{display:flex;flex-direction:column;gap:7px;padding:9px 3px}.settings label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}.settings input[type=range]{width:135px;min-width:80px;accent-color:#00e5ff}.settings output{min-width:34px;text-align:right}.settings small{font-size:11px;color:#cbd0da}.bouncerow{display:flex;align-items:center;gap:6px;width:100%}.bouncerow span{white-space:nowrap;font-size:13px}.bouncerow input[type=range]{flex:1;width:0;min-width:55px}.bouncerow button{flex:0 0 34px;min-width:0;padding:7px 2px;font-size:15px;white-space:nowrap}.bouncerow output{min-width:28px;text-align:center;font-variant-numeric:tabular-nums}.wallrow{display:grid;grid-template-columns:44px 46px 42px 46px;align-items:center;justify-content:space-between;gap:7px;width:100%}.wallrow span{white-space:nowrap;font-size:13px}.wallrow button{padding:7px 4px;min-width:0;font-size:14px;white-space:nowrap;line-height:1.3}.wallrow output{min-width:0;text-align:center;font-size:15px;font-variant-numeric:tabular-nums}.settings .file{align-self:flex-start} .settings button{align-self:flex-start}
 </style></head><body><main>
 <canvas id="board" width="800" height="900"></canvas>
+<canvas id="below" width="800" height="558"></canvas>
 <div class="floating"><details id="settings"><summary>⚙ 調整</summary><div class="settings">
 <label class="file">📷 スクショを選ぶ<input id="file" type="file" accept="image/*"></label>
 <div class="bouncerow"><span>反射</span><button type="button" id="bounceMinus">−1</button><input id="bounces" type="range" min="1" max="100" value="10"><button type="button" id="bouncePlus">＋1</button><output id="count">10</output></div>
@@ -16,12 +17,17 @@
 </div></details></div>
 </main><script>
 (()=>{'use strict';
-const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d'),below=$('below'),belowCtx=below.getContext('2d');
 const W=800,H=900,EPS=1e-7,STEP=.35*Math.PI/180;
 let origin={x:400,y:450},angle=-Math.PI/4,bounces=10,bg=null,drag=null,cropTop=19,cropHeight=50;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function draw(){
  ctx.clearRect(0,0,W,H);
+ belowCtx.clearRect(0,0,800,558);
+ if(bg && bg.width/bg.height<.7){
+  const start=bg.height*(cropTop+cropHeight)/100;
+  if(start<bg.height) belowCtx.drawImage(bg,0,start,bg.width,bg.height-start,0,0,800,558);
+ }
  if(bg){
   const portrait=bg.width/bg.height<.7;
   if(portrait){const sy=bg.height*cropTop/100,sh=Math.min(bg.height-sy,bg.height*cropHeight/100);ctx.drawImage(bg,0,sy,bg.width,sh,0,0,W,H)}
@@ -50,6 +56,10 @@ function aim(p){if(!drag||drag.type!=="aim")return;const dx=drag.start.x-p.x,dy=
 canvas.addEventListener('pointerdown',e=>{e.preventDefault();const p=point(e);drag={type:Math.hypot(p.x-origin.x,p.y-origin.y)<=63?'origin':'aim',start:p};canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;e.preventDefault();const p=point(e);if(drag.type==='origin'){origin={x:clamp(p.x,+$('left').value,W-+$('right').value),y:clamp(p.y,+$('upper').value,H-+$('lower').value)};draw()}else{aim(p)}});
 for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>drag=null);
+function belowPoint(e){const r=below.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:H+(e.clientY-r.top)*558/r.height}}
+below.addEventListener('pointerdown',e=>{e.preventDefault();drag={type:'aim',start:belowPoint(e)};below.setPointerCapture(e.pointerId)});
+below.addEventListener('pointermove',e=>{if(!drag)return;e.preventDefault();aim(belowPoint(e))});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])below.addEventListener(event,()=>drag=null);
 function updateBounces(n){bounces=Math.max(1,Math.min(100,n));$('bounces').value=bounces;$('count').textContent=bounces;draw()}
 $('bounces').addEventListener('input',e=>updateBounces(+e.target.value));
 $('bounceMinus').addEventListener('click',()=>updateBounces(bounces-1));
