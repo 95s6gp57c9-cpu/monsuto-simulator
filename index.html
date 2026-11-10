@@ -4,7 +4,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>反射軌道シミュレーター</title>
 <style>
 body {
   margin: 0;
@@ -41,19 +40,13 @@ input[type=file] { max-width: 190px; }
 
 <label>スクショ読み込み
 <input id="image" type="file" accept="image/*">
-</label>
-<button id="center">中央に戻す</button>
-<button id="minus">−0.35°</button>
-<button id="plus">＋0.35°</button>
-<button id="reset">角度リセット</button>
-
 <canvas id="field" width="900" height="800"></canvas>
 
 <script>
 const canvas = document.getElementById("field");
 const ctx = canvas.getContext("2d");
 
-const W = 900, H = 800, wall = 24;
+const W = 800, H = 900, wall = 24;
 const step = 0.35 * Math.PI / 180;
 
 let start = {x:450, y:400};
@@ -222,10 +215,3 @@ draw();
 </main>
 </body>
 </html>
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>反射軌道</title><style>*{box-sizing:border-box}body{margin:0;background:#151923;color:white;font-family:system-ui;padding:8px}main{max-width:520px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;height:46px}h1{font-size:17px;margin:0}button,.upload{background:#343d50;border:1px solid #667189;border-radius:8px;color:white;padding:10px;cursor:pointer;font-size:14px}.upload input{display:none}canvas{display:block;width:100%;aspect-ratio:8/9;background:#202633;touch-action:none;border:1px solid #7d879a;border-radius:6px}</style></head><body><main><header><h1>反射軌道</h1><div><label class="upload">スクショ<input type="file" id="file" accept="image/*"></label> <button id="clear">消去</button></div></header><canvas id="board" width="800" height="900"></canvas></main><script>
-(()=>{const canvas=document.querySelector('#board'),ctx=canvas.getContext('2d'),W=800,H=900,step=Math.PI/180*.35;let p={x:400,y:450},a=-Math.PI/4,img=null,drag=null;const margin=4;
-function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle='#202633';ctx.fillRect(0,0,W,H);if(img){let iw=img.naturalWidth,ih=img.naturalHeight;if(iw/ih<.72){ctx.drawImage(img,iw*.01,ih*.19,iw*.98,ih*.50,0,0,W,H)}else{ctx.drawImage(img,0,0,iw,ih,0,0,W,H)}}ctx.save();ctx.beginPath();ctx.rect(margin,margin,W-2*margin,H-2*margin);ctx.clip();let x=p.x,y=p.y,dx=Math.cos(a),dy=Math.sin(a),left=18000;ctx.beginPath();ctx.moveTo(x,y);for(let i=0;i<3000&&left>0;i++){let tx=dx>0?(W-margin-x)/dx:dx<0?(margin-x)/dx:Infinity,ty=dy>0?(H-margin-y)/dy:dy<0?(margin-y)/dy:Infinity,t=Math.min(tx>1e-8?tx:Infinity,ty>1e-8?ty:Infinity,left);if(!Number.isFinite(t))break;x+=dx*t;y+=dy*t;left-=t;ctx.lineTo(x,y);if(left<=0)break;if(Math.abs(tx-t)<1e-5)dx=-dx;if(Math.abs(ty-t)<1e-5)dy=-dy;}ctx.lineWidth=4;ctx.strokeStyle='#00e5ff';ctx.shadowColor='#00e5ff';ctx.shadowBlur=7;ctx.stroke();ctx.restore();ctx.beginPath();ctx.arc(p.x,p.y,11,0,Math.PI*2);ctx.fillStyle='#ffdd3e';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();}
-function loc(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}function move(e){let q=loc(e);if(drag==='point'){p={x:Math.max(margin,Math.min(W-margin,q.x)),y:Math.max(margin,Math.min(H-margin,q.y))}}else if(drag==='aim'){a=Math.round(Math.atan2(q.y-p.y,q.x-p.x)/step)*step}draw()}
-canvas.addEventListener('pointerdown',e=>{e.preventDefault();let q=loc(e);drag=Math.hypot(q.x-p.x,q.y-p.y)<35?'point':'aim';canvas.setPointerCapture(e.pointerId);move(e)});canvas.addEventListener('pointermove',e=>{if(drag){e.preventDefault();move(e)}});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
-function load(f){if(!f||!f.type.startsWith('image/'))return;let url=URL.createObjectURL(f),im=new Image();im.onload=()=>{img=im;draw();URL.revokeObjectURL(url)};im.src=url}document.querySelector('#file').onchange=e=>load(e.target.files[0]);document.querySelector('#clear').onclick=()=>{img=null;draw()};document.addEventListener('paste',e=>{for(let item of e.clipboardData?.items||[]){if(item.type.startsWith('image/')){load(item.getAsFile());break}}});draw()})();
-</script></body></html>
