@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>反射軌道シミュレーター</title>
+<style>
+body {
+  margin: 0;
+  padding: 15px;
+  background: #171923;
+  color: white;
+  font-family: sans-serif;
+}
+main { max-width: 750px; margin: auto; }
+canvas {
+  width: 100%;
+  display: block;
+  background: #202633;
+  border: 2px solid #aaa;
+  border-radius: 10px;
+  touch-action: none;
+}
+button, label {
+  display: inline-block;
+  margin: 5px 3px;
+  padding: 10px;
+  color: white;
+  background: #343b4d;
+  border: 1px solid #68738a;
+  border-radius: 8px;
+}
+input[type=file] { max-width: 190px; }
+</style>
+</head>
+<body>
+<main>
+<h2>反射軌道シミュレーター</h2>
+<p>黄色い点を動かして開始位置を変更。点から離れた場所をドラッグして狙う方向を調整。</p>
+
+<label>スクショ読み込み
+<input id="image" type="file" accept="image/*">
+</label>
+<button id="center">中央に戻す</button>
+<button id="minus">−0.35°</button>
+<button id="plus">＋0.35°</button>
+<button id="reset">角度リセット</button>
+
+<canvas id="field" width="900" height="800"></canvas>
+
+<script>
+const canvas = document.getElementById("field");
+const ctx = canvas.getContext("2d");
+
+const W = 900, H = 800, wall = 24;
+const step = 0.35 * Math.PI / 180;
+
+let start = {x:450, y:400};
+let angle = -Math.PI / 4;
+let dragging = "";
+let bg = null;
+let distance = 12000;
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = "#202633";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(wall,wall,W-2*wall,H-2*wall);
+  ctx.clip();
+
+  if (bg) {
+    const scale = Math.max(W/bg.width,H/bg.height);
+    const dw = bg.width*scale, dh = bg.height*scale;
+    ctx.globalAlpha = 0.8;
+    ctx.drawImage(bg,(W-dw)/2,(H-dh)/2,dw,dh);
+    ctx.globalAlpha = 1;
+  }
+
+  let x=start.x, y=start.y;
+  let dx=Math.cos(angle), dy=Math.sin(angle);
+  let remaining=distance;
+  const points=[[x,y]];
+
+  for(let i=0;i<100000 && remaining>0;i++){
+    const tx=dx>0?(W-wall-x)/dx:
+             dx<0?(wall-x)/dx:Infinity;
+    const ty=dy>0?(H-wall-y)/dy:
+             dy<0?(wall-y)/dy:Infinity;
+
+    const t=Math.min(
+      tx>0.000001?tx:Infinity,
+      ty>0.000001?ty:Infinity,
+      remaining
+    );
+
+    if(!Number.isFinite(t)) break;
+
+    x+=dx*t;
+    y+=dy*t;
+    remaining-=t;
+    points.push([x,y]);
+
+    if(remaining<=0) break;
+    if(Math.abs(t-tx)<0.00001) dx=-dx;
+    if(Math.abs(t-ty)<0.00001) dy=-dy;
+  }
+
+  ctx.beginPath();
+  points.forEach((p,i)=>{
+    if(i===0) ctx.moveTo(p[0],p[1]);
+    else ctx.lineTo(p[0],p[1]);
+  });
+  ctx.strokeStyle="#00e5ff";
+  ctx.lineWidth=5;
+  ctx.shadowColor="#00e5ff";
+  ctx.shadowBlur=10;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.strokeStyle="#ffd54a";
+  ctx.lineWidth=4;
+  ctx.strokeRect(wall,wall,W-2*wall,H-2*wall);
+
+  ctx.beginPath();
+  ctx.arc(start.x,start.y,12,0,Math.PI*2);
+  ctx.fillStyle="#ffd54a";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(start.x,start.y);
+  ctx.lineTo(
+    start.x+Math.cos(angle)*55,
+    start.y+Math.sin(angle)*55
+  );
+  ctx.strokeStyle="#ffd54a";
+  ctx.lineWidth=4;
+  ctx.stroke();
+}
+
+function getPoint(e) {
+  const r=canvas.getBoundingClientRect();
+  return {
+    x:(e.clientX-r.left)*W/r.width,
+    y:(e.clientY-r.top)*H/r.height
+  };
+}
+
+function aim(p) {
+  angle=Math.round(
+    Math.atan2(p.y-start.y,p.x-start.x)/step
+  )*step;
+  draw();
+}
+
+canvas.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  const p=getPoint(e);
+  dragging=Math.hypot(
+    p.x-start.x,p.y-start.y
+  )<32 ? "start" : "aim";
+  canvas.setPointerCapture(e.pointerId);
+
+  if(dragging==="start") {
+    start=p;
+    draw();
+  } else {
+    aim(p);
+  }
+});
+
+canvas.addEventListener("pointermove",e=>{
+  if(!dragging) return;
+  e.preventDefault();
+  const p=getPoint(e);
+
+  if(dragging==="start") {
+    start={
+      x:Math.max(wall,Math.min(W-wall,p.x)),
+      y:Math.max(wall,Math.min(H-wall,p.y))
+    };
+    draw();
+  } else {
+    aim(p);
+  }
+});
+
+canvas.addEventListener("pointerup",()=>dragging="");
+canvas.addEventListener("pointercancel",()=>dragging="");
+
+document.getElementById("center").onclick=()=>{
+  start={x:450,y:400}; draw();
+};
+document.getElementById("minus").onclick=()=>{
+  angle-=step; draw();
+};
+document.getElementById("plus").onclick=()=>{
+  angle+=step; draw();
+};
+document.getElementById("reset").onclick=()=>{
+  angle=-Math.PI/4; draw();
+};
+
+document.getElementById("image").onchange=e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{
+    bg=img;
+    draw();
+    URL.revokeObjectURL(url);
+  };
+  img.src=url;
+};
+
+draw();
+</script>
+</main>
+</body>
+</html>
